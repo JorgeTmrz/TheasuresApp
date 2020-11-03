@@ -1,0 +1,126 @@
+﻿@page "/login"
+@inject AppDbServices services
+@inject ISessionStorageService sessionStorage
+@inject NavigationManager navManager
+@inject AuthenticationStateProvider authStateProvider
+
+<div class="card mx-auto" style="width:50rem">
+    <div class="text-center">
+        <h1 class="card-header">
+            🗝️
+        </h1>
+        <h5 class="card-header">
+            Aplicacion de tesosos
+        </h5>
+    </div>
+    <div class="card-body">
+        <small>Ingrese sus credenciales</small>
+        <EditForm Model="userTocheck">
+            <div class="form-group">
+                <label class="col-form-label" for="cedula">Email</label>
+                <input @bind="userTocheck.Correo" @bind:event="onchange" class="form-control" type="email" placeholder="something@something.com" required autofocus />
+                <label class="col-form-label" for="contraseña">Contraseña</label>
+                <input @bind="userTocheck.Clave" @bind:event="onchange" class="form-control" type="password" placeholder="Clave" required />
+                <div class="mt-2 from-group row">
+                    <button @onclick="checkUser" type="button" class="btn btn-success col-md m-auto">Iniciar Sesion</button>
+                    <button type="button" class="btn btn-dark col-md m-auto" data-toggle="modal" data-target="#registrationModal">¡Registrarse!</button>
+                </div>
+            </div>
+            <div class=" text-center">
+                <small style="color:orangered">@errorMessage</small>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+<!--- Modal for user registration --->
+<div class="modal modal-fade" tabindex="-1" role="dialog" aria-labelledby="registrationModal" id="registrationModal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header text-center">
+                <h5 class="modal-title">Registrarse</h5>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="newUser">
+                    <div class="form-group">
+                        <label class="col-form-label" for="cedula">Email</label>
+                        <input @bind="newUser.Correo" @bind:event="onchange" class="form-control" type="email" placeholder="something@something.com" required autofocus />
+                        <label class="col-form-label" for="contraseña">Nombre</label>
+                        <input @bind="newUser.Nombre" @bind:event="onchange" class="form-control" type="text" placeholder="Nombre" required />
+                        <label class="col-form-label" for="cedula">Contraseña</label>
+                        <input @bind="newUser.Clave" @bind:event="onchange" class="form-control" type="password" placeholder="Contraseña" required />
+                        <label class="col-form-label" for="contraseña">Contraseña</label>
+                        <input @bind="newUser.ColorFav" @bind:event="onchange" class="form-control" type="color" required />
+                        <div class="mt-2 from-group row">
+                            <button @onclick="registerUser" type="button" class="btn btn-block btn-success col-md m-auto">Registrarse</button>
+                        </div>
+                    </div>
+                    <div class=" text-center">
+                        <small style="color:orangered">@errorMessage</small>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    Usuario userTocheck = new Usuario();
+    Usuario newUser = new Usuario();
+
+    string errorMessage = "";
+
+    public async Task checkUser()
+    {
+        errorMessage = "";
+        bool alreadyExist = await services.checkIfUsuarioAlreadyExistsAsync(userTocheck.Correo);
+
+        if (alreadyExist)
+        {
+            bool credentialsAreRigth = await services.checkCredentialsAsync(userTocheck);
+            if (credentialsAreRigth)
+            {
+                var user = await services.GetUsuarioAsync(userTocheck.Correo);
+                ((CustomAutenticationStateProvider)authStateProvider).AutenticateUser(userTocheck.Correo);
+                await sessionStorage.SetItemAsync("Correo", userTocheck.Correo);
+                await sessionStorage.SetItemAsync("Nombre", user.Nombre);
+                await sessionStorage.SetItemAsync("ColorFav", user.ColorFav);
+                user = new Usuario();
+                navManager.NavigateTo("/tesoros");
+            }
+            else
+            {
+                errorMessage = "Las credenciales estan mal, intentelo de nuevo :(";
+            }
+        }
+        else
+        {
+            errorMessage = "Este usuario no esta registrado";
+        }
+
+    }
+
+    public async Task registerUser()
+    {
+        errorMessage = "";
+        bool alreadyExist = await services.checkIfUsuarioAlreadyExistsAsync(userTocheck.Correo);
+
+        if (alreadyExist)
+        {
+            errorMessage = "Este Usuario ya existe, trate de iniciar sesion";
+        }
+        else
+        {
+            try
+            {
+                await services.registerUsuarioAsync(newUser);
+                newUser = new Usuario();
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+    }
+
+}

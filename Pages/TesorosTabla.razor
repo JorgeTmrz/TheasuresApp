@@ -1,0 +1,182 @@
+﻿@page "/tesoros"
+@inject NavigationManager NavManager
+@inject AppDbServices services
+@inject ISessionStorageService sessionStorage
+
+<legend>Tesoros guardados</legend>
+
+<table class="table">
+    <thead class="thead-dark">
+        <tr>
+            <td>ID</td>
+            <td>Nombre</td>
+            <td>Descripcion</td>
+            <td>Lugar</td>
+            <td>Fecha</td>
+            <td>Valor Monetario</td>
+            <td>Peso</td>
+            <td>Url</td>
+            <td>Editar/Borrar</td>
+        </tr>
+    </thead>
+    <tbody>
+        @if (listOfTesoros.Any())
+        {
+            @foreach (var tesoro in listOfTesoros)
+            {
+                <tr>
+                    <td>@tesoro.ID</td>
+                    <td>@tesoro.Nombre</td>
+                    <td>@tesoro.Descripcion</td>
+                    <td>@tesoro.Lugar</td>
+                    <td>@tesoro.Fecha</td>
+                    <td>RD$@tesoro.Valor</td>
+                    <td>@tesoro.Peso Libras</td>
+                    <td>@tesoro.URLReferencia</td>
+                    <td>
+                        <button @onclick="(() => deleteTesoroData(tesoro))" class="btn btn-danger"> <span class="oi oi-trash"></span> </button>
+                        <button @onclick="(() => setTesoroForUpdate(tesoro))" class="btn btn-warning" data-toggle="modal" data-target="#editTesoroModal"> <span class="oi oi-pencil"></span> </button>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr class="text-center">
+                <td colspan="8">
+                    <strong>No tienes tesoros guardados</strong>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<button class="btn btn-primary rounded-circle" data-toggle="modal" data-target="#newSecretModal" style="position:absolute; right:10px; bottom:10px; padding:12px">
+    <span class="oi oi-plus m-2"></span>
+</button>
+
+<div class="modal modal-fade" id="newSecretModal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <h5 class="modal-header">
+                Nuevo Tesoro 🗝️
+            </h5>
+            <div class="modal-body">
+                <EditForm Model="newTesoro">
+                    <div class="form-group">
+                        <label for="title" class="col-form-label">Nombre</label>
+                        <input type="text" placeholder="Titulo" class="form-control" @bind-value:event="onchange" @bind-value="newTesoro.Nombre" />
+                        <label for="title" class="col-form-label">Descripcion</label>
+                        <input type="text" placeholder="Descripcion" class="form-control" @bind-value:event="onchange" @bind-value="newTesoro.Descripcion" />
+                        <label for="title" class="col-form-label">Lugar</label>
+                        <input type="text" placeholder="Lugar" class="form-control" @bind-value:event="onchange" @bind-value="newTesoro.Lugar" />
+                        <label for="title" class="col-form-label">Fecha</label>
+                        <input type="date" class="form-control" @bind-value:event="onchange" @bind-value="newTesoro.Fecha" />
+                        <label for="title" class="col-form-label">Valor Monetario</label>
+                        <input type="number" class="form-control" @bind-value:event="onchange" @bind-value="newTesoro.Valor" />
+                        <label for="title" class="col-form-label">Url de referencia</label>
+                        <input type="url" class="form-control" @bind-value:event="onchange" @bind-value="newTesoro.URLReferencia" />
+                        <label for="title" class="col-form-label">Valor Monetario</label>
+                        <input type="number" class="form-control" @bind-value:event="onchange" @bind-value="newTesoro.Peso" />
+                        <label for="title" class="col-form-label">Latitud</label>
+                        <input type="text" placeholder="Latitud" class="form-control" @bind-value:event="onchange" @bind-value="newTesoro.Latitud" />
+                        <label for="title" class="col-form-label">Longitud</label>
+                        <input type="text" placeholder="Longitud" class="form-control" @bind-value:event="onchange" @bind-value="newTesoro.Longitud" />
+                    </div>
+                    <div class="form-group">
+                        <button @onclick="createTesoro" type="button" class="btn btn-success btn-block">Guardar Tesoro</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal modal-fade" id="editTesoroModal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <h5 class="modal-header">
+                Editar Secreto
+            </h5>
+            <div class="modal-body">
+                <EditForm Model="tesoroForUpdate">
+                    <div class="form-group">
+                        <label for="title" class="col-form-label">Nombre</label>
+                        <input type="text" placeholder="Titulo" class="form-control" @bind-value:event="onchange" @bind-value="tesoroForUpdate.Nombre" />
+                        <label for="title" class="col-form-label">Descripcion</label>
+                        <input type="text" placeholder="Descripcion" class="form-control" @bind-value:event="onchange" @bind-value="tesoroForUpdate.Descripcion" />
+                        <label for="title" class="col-form-label">Lugar</label>
+                        <input type="text" placeholder="Lugar" class="form-control" @bind-value:event="onchange" @bind-value="tesoroForUpdate.Lugar" />
+                        <label for="title" class="col-form-label">Fecha</label>
+                        <input type="date" class="form-control" @bind-value:event="onchange" @bind-value="tesoroForUpdate.Fecha" />
+                        <label for="title" class="col-form-label">Valor Monetario</label>
+                        <input type="number" class="form-control" @bind-value:event="onchange" @bind-value="tesoroForUpdate.Valor" />
+                        <label for="title" class="col-form-label">Url de referencia</label>
+                        <input type="url" class="form-control" @bind-value:event="onchange" @bind-value="tesoroForUpdate.URLReferencia" />
+                        <label for="title" class="col-form-label">Valor Monetario</label>
+                        <input type="number" class="form-control" @bind-value:event="onchange" @bind-value="tesoroForUpdate.Peso" />
+                        <label for="title" class="col-form-label">Latitud</label>
+                        <input type="text" placeholder="Latitud" class="form-control" @bind-value:event="onchange" @bind-value="tesoroForUpdate.Latitud" />
+                        <label for="title" class="col-form-label">Longitud</label>
+                        <input type="text" placeholder="Longitud" class="form-control" @bind-value:event="onchange" @bind-value="tesoroForUpdate.Longitud" />
+                    </div>
+                    <div class="form-group">
+                        <button @onclick="updateTesoroData" type="button" class="btn btn-success btn-block">Guardar Tesoro</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    List<Tesoro> listOfTesoros = new List<Tesoro>();
+    Tesoro newTesoro = new Tesoro();
+    Tesoro tesoroForUpdate = new Tesoro();
+
+    string currentUserMail = "";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (await sessionStorage.GetItemAsync<string>("Correo") == null)
+        {
+            NavManager.NavigateTo("/login");
+        }
+        else
+        {
+            currentUserMail = await sessionStorage.GetItemAsync<string>("Correo");
+            await refreshTable();
+            StateHasChanged();
+        }
+    }
+
+    public async Task createTesoro()
+    {
+        newTesoro.Usuario = await services.GetUsuarioAsync(currentUserMail);
+        await services.CreateTesoroAsync(newTesoro);
+        await refreshTable();
+    }
+
+    public async Task refreshTable()
+    {
+        listOfTesoros = await services.GetTesorosAsync(currentUserMail);
+    }
+
+    public async Task deleteTesoroData(Tesoro tesoro)
+    {
+        await services.DeleteTesoroAsync(tesoro);
+        await refreshTable();
+    }
+
+    public void setTesoroForUpdate(Tesoro tesoro)
+    {
+        tesoroForUpdate = tesoro;
+    }
+
+    public async Task updateTesoroData()
+    {
+        await services.UpdateTesoroAsync(tesoroForUpdate);
+        await refreshTable();
+    }
+}

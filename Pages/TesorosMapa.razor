@@ -1,0 +1,41 @@
+﻿@page "/tesorosMapa"
+@inject AppDbServices services
+@inject ISessionStorageService sessionStorage
+@inject IJSRuntime jsRunntime
+@inject NavigationManager navManager
+
+<legend>Mapa de tesoros</legend>
+
+<div id="mapid"></div>
+
+@code {
+    List<Tesoro> ListOfTesoros = new List<Tesoro>();
+    string currentUserEmail = "";
+
+    protected async override Task OnInitializedAsync()
+    {
+        if (await sessionStorage.GetItemAsync<string>("Correo") == null)
+        {
+            navManager.NavigateTo("/login");
+        }
+        else
+        {
+            await getListofTesoros();
+            await jsRunntime.InvokeVoidAsync("initialyzemap");
+            foreach (var tesoro in ListOfTesoros)
+            {
+                if (tesoro.Latitud != null && tesoro.Longitud != null)
+                {
+                    await jsRunntime.InvokeVoidAsync("setPopupsOnMap", tesoro.Nombre, tesoro.Latitud, tesoro.Longitud, tesoro.Descripcion);
+                }
+            }
+
+        }
+    }
+
+    public async Task getListofTesoros()
+    {
+        currentUserEmail = await sessionStorage.GetItemAsync<string>("Correo");
+        ListOfTesoros = await services.GetTesorosAsync(currentUserEmail);
+    }
+}

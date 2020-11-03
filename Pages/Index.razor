@@ -1,0 +1,10 @@
+﻿@page "/"
+
+<AuthorizeView>
+    <Authorized>
+        Welcome, @context.User.Identity.Name
+    </Authorized>
+    <NotAuthorized>
+        You need to <a href="/login">login</a> to use this app
+    </NotAuthorized>
+</AuthorizeView>

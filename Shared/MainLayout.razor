@@ -1,0 +1,106 @@
+﻿@inherits LayoutComponentBase
+@inject AppDbServices services
+@inject AuthenticationStateProvider authStateProvider
+@inject ISessionStorageService sessionStorage
+
+
+<div class="sidebar">
+    <NavMenu />
+</div>
+
+<AuthorizeView>
+    <NotAuthorized>
+        <div class="main">
+            <div class="top-row px-4">
+                <a href="/login">Login</a>
+            </div>
+            <div class="content px-4">
+                @Body
+            </div>
+        </div>
+    </NotAuthorized>
+    <Authorized>
+        <div class="mainAutorized">
+            <div class="top-row px-4" style="background: rgb(255,255,255);
+       background: linear-gradient(103deg, #ffffff 0%, @colorFav 100%);">
+                <p>
+                    @nombre 👥
+                <button data-toggle="modal" data-target="#UpdateUserData" class="btn btn-light rounded-circle ml-2">
+                    ⛭
+                </button>
+            </p>
+            <a @onclick="Logout" href="login">Logout</a>
+        </div>
+        <div class="content px-4">
+            @Body
+        </div>
+    </div>
+</Authorized>
+</AuthorizeView>
+
+<div class="modal modal-fade" aria-hidden="true" id="UpdateUserData">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header text-center">
+                👥 Cambiar Datos de usuario
+            </div>
+            <div class="modal-body">
+                <EditForm Model="userToUpdate">
+                    <div class="form-group">
+                        <label for="nombre" class="col-form-label">Nombre</label>
+                        <input type="text" @bind-value="userToUpdate.Nombre" @bind-value:event="onchange" class="form-control" placeholder="Nombre del Usuario" />
+                    </div>
+                    <div class="form-group">
+                        <label for="nombre" class="col-form-label">Clave</label>
+                        <input type="password" @bind-value="userToUpdate.Clave" @bind-value:event="onchange" class="form-control" placeholder="Clave de la cuenta" />
+                    </div>
+                    <div class="form-group">
+                        <label for="nombre" class="col-form-label">Color Favorito</label>
+                        <input type="color" @bind-value="userToUpdate.ColorFav" class="form-control" @bind-value:event="onchange" />
+                    </div>
+                </EditForm>
+                <div class="form-group">
+                    <button @onclick="updateUser" class="btn btn-block btn-warning">Cambiar Datos de usuario</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    string nombre;
+    string colorFav;
+    Usuario userToUpdate = new Usuario();
+    string currentUserEmail = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await getUserData();
+    }
+
+    private async Task getUserData()
+    {
+        currentUserEmail = await sessionStorage.GetItemAsync<string>("Correo");
+        nombre = await sessionStorage.GetItemAsync<string>("Nombre");
+        colorFav = await sessionStorage.GetItemAsync<string>("ColorFav");
+    }
+    public void Logout()
+    {
+        ((CustomAutenticationStateProvider)authStateProvider).unAuthenticateUser();
+    }
+    public async Task updateUser()
+    {
+        try
+        {
+            userToUpdate.Correo = currentUserEmail;
+            await services.UpdateUsuarioAsync(userToUpdate);
+            await sessionStorage.SetItemAsync("Nombre", userToUpdate.Nombre);
+            await sessionStorage.SetItemAsync("ColorFav", userToUpdate.ColorFav);
+            await getUserData();
+        }
+        catch (Exception)
+        {
+            throw;
+        }
+    }
+}
